@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Local Chat</title>
+  </head>
+  <body>
+    <div id="login">
+      <h2>Welcome to the Chat</h2>
+      <input id="username" type="text" placeholder="Enter my username" />
+      <button id="loginBtn">Login</button>
+    </div>
+    <div id="chat">
+      <div id="users"></div>
+      <div id="messages"></div>
+      <div id="input">
+        <input id="messageInput" type="text" placeholder="my message." />
+        <button id="sendBtn">Send</button>
+      </div>
+    </div>
+    <script>
+      const loginDiv = document.getElementById("login");
+      const chatDiv = document.getElementById("chat");
+      const usernameInput = document.getElementById("username");
+      const loginBtn = document.getElementById("loginBtn");
+      const messagesDiv = document.getElementById("messages");
+      const messageInput = document.getElementById("messageInput");
+      const sendBtn = document.getElementById("sendBtn");
+      const usersDiv = document.getElementById("users");
+
+      let username = "";
+      const ws = new WebSocket("http://localhost:4000");
+
+      ws.onmessage = (event) => {
+        const message = JSON.parse(event.data);
+
+        if (message.type === "message") {
+          const messageElement = document.createElement("div");
+          messageElement.textContent = `[${message.time}] ${message.sender}: ${message.text}`;
+          messagesDiv.appendChild(messageElement);
+          messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        } else if (message.type === "userlist") {
+          usersDiv.innerHTML = `<strong>Active users:</strong> ${message.users.join(
+            ", "
+          )}`;
+        }
+      };
+
+      loginBtn.addEventListener("click", () => {
+        username = usernameInput.value.trim();
+        if (username) {
+          ws.send(JSON.stringify({ type: "login", username }));
+          loginDiv.style.display = "none";
+          chatDiv.style.display = "flex";
+        }
+      });
+
+      sendBtn.addEventListener("click", () => {
+        const text = messageInput.value.trim();
+        if (text) {
+          ws.send(JSON.stringify({ type: "message", text }));
+          messageInput.value = "";
+        }
+      });
+    </script>
+  </body>
+</html>
